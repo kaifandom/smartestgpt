@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SmartestGPT</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .typing {
+      border-right: 2px solid white;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+  </style>
+</head>
+<body id="body" class="bg-gray-900 text-white h-screen flex flex-col transition-colors duration-300">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-700 bg-gray-800">
+    <div class="flex items-center space-x-2">
+      <img src="https://api.dicebear.com/6.x/bottts/svg?seed=SmartestGPT" alt="Bot Avatar" class="w-8 h-8">
+      <span class="font-bold text-lg">SmartestGPT</span>
+    </div>
+    <button onclick="toggleTheme()" class="text-sm bg-gray-700 px-2 py-1 rounded hover:bg-gray-600">Dark/Light</button>
+  </div>
+
+  <!-- Chat Box -->
+  <div id="chatBox" class="flex-grow overflow-y-auto p-4 space-y-4"></div>
+
+  <!-- Input -->
+  <div class="border-t border-gray-700 p-4">
+    <div class="flex">
+      <input id="userInput" type="text" placeholder="Hỏi gì cũng không biết..." class="flex-grow p-2 rounded bg-gray-800 border border-gray-600 text-white"/>
+      <button onclick="sendMessage()" class="ml-2 px-4 py-2 bg-blue-600 rounded hover:bg-blue-500">Gửi</button>
+    </div>
+  </div>
+
+  <!-- Avatar Modal -->
+  <div id="avatarModal" class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50">
+    <div class="bg-white text-black p-6 rounded-lg w-80 text-center">
+      <h2 class="text-lg font-bold mb-4">Chọn avatar của bạn</h2>
+      <div class="flex justify-center space-x-4 mb-4">
+        <img src="https://api.dicebear.com/6.x/adventurer/svg?seed=User1" class="w-16 h-16 cursor-pointer rounded-full border-2" onclick="selectAvatar('User1', event)">
+        <img src="https://api.dicebear.com/6.x/adventurer/svg?seed=User2" class="w-16 h-16 cursor-pointer rounded-full border-2" onclick="selectAvatar('User2', event)">
+        <img src="https://api.dicebear.com/6.x/adventurer/svg?seed=User3" class="w-16 h-16 cursor-pointer rounded-full border-2" onclick="selectAvatar('User3', event)">
+      </div>
+      <button onclick="confirmAvatar()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500">OK</button>
+    </div>
+  </div>
+
+  <script>
+    const replies = [
+      "I don't know.", "No clue.", "That's too hard for me.", "Beats me!", "Uhh... what?", "I'm just a potato.",
+      "You're asking the wrong AI.", "Not in my database.", "Sorry, my brain just froze.", "Hmm... nope.",
+      "My circuits can't handle that.", "I'd rather not say.", "That's a mystery for the ages.",
+      "Oops, I left my knowledge in my other server.", "404: Knowledge not found.", "That's classified!",
+      "Out of office. Try again later.", "Even Google doesn't know that.", "I plead the fifth.",
+      "I'm not that smart actually.", "I was built to disappoint."
+    ];
+
+    let userAvatar = "User1";
+
+    window.onload = () => {
+      document.getElementById('avatarModal').style.display = 'flex';
+    }
+
+    document.getElementById('userInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      appendMessage('user', msg);
+      input.value = '';
+      setTimeout(() => {
+        const reply = getRandomReply();
+        typeMessage('bot', reply);
+      }, 500);
+    }
+
+    function appendMessage(type, text, isTyping = false) {
+      const chatBox = document.getElementById('chatBox');
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `flex items-start space-x-2 ${type === 'user' ? 'justify-end' : ''}`;
+
+      const avatar = document.createElement('img');
+      avatar.src = type === 'user'
+        ? `https://api.dicebear.com/6.x/adventurer/svg?seed=${userAvatar}`
+        : `https://api.dicebear.com/6.x/bottts/svg?seed=SmartestGPT`;
+      avatar.className = 'w-8 h-8 rounded-full';
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg ${
+        type === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-white'
+      }`;
+
+      const textDiv = document.createElement('div');
+      textDiv.className = isTyping ? 'typing' : '';
+      textDiv.textContent = isTyping ? '' : text;
+      if (isTyping) textDiv.dataset.typing = "true";
+
+      messageDiv.appendChild(textDiv);
+
+      if (type === 'bot' && !isTyping) {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'mt-1 flex items-center text-gray-400 hover:text-gray-200';
+        copyBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span class="ml-1 text-sm hidden md:inline">Copy</span>`;
+        copyBtn.onclick = () => copyToClipboard(text);
+        messageDiv.appendChild(copyBtn);
+      }
+
+      if (type === 'user') {
+        wrapper.appendChild(messageDiv);
+        wrapper.appendChild(avatar);
+      } else {
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(messageDiv);
+      }
+
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return textDiv;
+    }
+
+    function typeMessage(type, text) {
+  const el = appendMessage(type, '', true);
+  let i = 0;
+  function typing() {
+    if (i < text.length) {
+      el.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(typing, 30);
+    } else {
+      el.classList.remove('typing');
+
+      // ✅ Sau khi gõ xong, thêm nút copy vào lại
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'mt-1 flex items-center text-gray-400 hover:text-gray-200';
+      copyBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span class="ml-1 text-sm hidden md:inline">Copy</span>
+      `;
+      copyBtn.title = "Copy";
+      copyBtn.onclick = () => copyToClipboard(text);
+      
+      // ✅ Tìm phần tử message container để append nút
+      const msgContainer = el.parentElement;
+      msgContainer.appendChild(copyBtn);
+    }
+  }
+  typing();
+}
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+    }
+
+    function toggleTheme() {
+      const body = document.getElementById('body');
+      const isDark = body.classList.contains('bg-gray-900');
+      body.className = isDark
+        ? 'bg-white text-black h-screen flex flex-col transition-colors duration-300'
+        : 'bg-gray-900 text-white h-screen flex flex-col transition-colors duration-300';
+    }
+
+    function selectAvatar(name, event) {
+      userAvatar = name;
+      document.querySelectorAll('#avatarModal img').forEach(img => {
+        img.classList.remove('ring-4', 'ring-blue-500');
+      });
+      event.target.classList.add('ring-4', 'ring-blue-500');
+    }
+
+    function confirmAvatar() {
+      document.getElementById('avatarModal').style.display = 'none';
+    }
+
+    function getRandomReply() {
+      return replies[Math.floor(Math.random() * replies.length)];
+    }
+  </script>
+</body>
+</html>
